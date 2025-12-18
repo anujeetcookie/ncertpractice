@@ -179,6 +179,10 @@ function selectQuestions({ grade, subject, chapter, rounds }) {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => {
+  res.redirect('/host');
+});
+
 app.get('/host', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'host.html'));
 });
