@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ncert-timer-study
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production

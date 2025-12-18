@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "NCERT question practice app with central timer and multiplayer race via shared link.",
   "main": "server.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "node server.js"
   },

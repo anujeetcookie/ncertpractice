@@ -5,7 +5,33 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
+function parseAllowedOrigins() {
+  const allowed = new Set();
+  if (process.env.PUBLIC_URL) allowed.add(process.env.PUBLIC_URL);
+  if (process.env.RENDER_EXTERNAL_URL) allowed.add(process.env.RENDER_EXTERNAL_URL);
+  if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach(v => {
+      const trimmed = String(v || '').trim();
+      if (trimmed) allowed.add(trimmed);
+    });
+  }
+  return Array.from(allowed);
+}
+
+const allowedOrigins = parseAllowedOrigins();
+const io = new Server(server, {
+  cors:
+    allowedOrigins.length > 0
+      ? {
+          origin: allowedOrigins,
+          methods: ['GET', 'POST']
+        }
+      : undefined
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -183,6 +209,10 @@ app.get('/', (req, res) => {
   res.redirect('/host');
 });
 
+app.get('/healthz', (req, res) => {
+  res.status(200).send('ok');
+});
+
 app.get('/host', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'host.html'));
 });
@@ -264,7 +294,8 @@ io.on('connection', socket => {
 
     socket.join(roomId);
 
-    const joinUrl = `${process.env.PUBLIC_URL || ''}/join/${roomId}`;
+    const baseUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || null;
+    const joinUrl = baseUrl ? `${baseUrl}/join/${roomId}` : null;
 
     socket.emit('roomCreated', {
       roomId,
