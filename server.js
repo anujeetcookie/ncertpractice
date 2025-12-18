@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -34,6 +35,20 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
+
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+function resolvePublicFile(fileName) {
+  const inPublic = path.join(PUBLIC_DIR, fileName);
+  if (fs.existsSync(inPublic)) return inPublic;
+  const inRoot = path.join(__dirname, fileName);
+  if (fs.existsSync(inRoot)) return inRoot;
+  return null;
+}
+
+const HOST_HTML_PATH = resolvePublicFile('host.html');
+const PLAYER_HTML_PATH = resolvePublicFile('player.html');
+const STYLES_CSS_PATH = resolvePublicFile('styles.css');
 
 // In-memory room state
 const rooms = {};
@@ -203,7 +218,19 @@ function selectQuestions({ grade, subject, chapter, rounds }) {
   };
 }
 
-app.use(express.static(path.join(__dirname, 'public')));
+if (fs.existsSync(PUBLIC_DIR) && fs.statSync(PUBLIC_DIR).isDirectory()) {
+  app.use(express.static(PUBLIC_DIR));
+}
+
+app.get('/styles.css', (req, res) => {
+  if (!STYLES_CSS_PATH) {
+    res
+      .status(404)
+      .send('styles.css not found. Ensure it exists in /public or the repo root.');
+    return;
+  }
+  res.sendFile(STYLES_CSS_PATH);
+});
 
 app.get('/', (req, res) => {
   res.redirect('/host');
@@ -214,11 +241,23 @@ app.get('/healthz', (req, res) => {
 });
 
 app.get('/host', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'host.html'));
+  if (!HOST_HTML_PATH) {
+    res
+      .status(500)
+      .send('host.html not found. Ensure it exists in /public or the repo root.');
+    return;
+  }
+  res.sendFile(HOST_HTML_PATH);
 });
 
 app.get('/join/:roomId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'player.html'));
+  if (!PLAYER_HTML_PATH) {
+    res
+      .status(500)
+      .send('player.html not found. Ensure it exists in /public or the repo root.');
+    return;
+  }
+  res.sendFile(PLAYER_HTML_PATH);
 });
 
 function createRoomId() {
