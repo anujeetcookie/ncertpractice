@@ -37,7 +37,7 @@
   width: auto;
   pointer-events: none;
   /* Optional: Drop shadow for better visibility against dark bg */
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  filter: invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
 /* ===== LEGAL FOOTER ===== */
