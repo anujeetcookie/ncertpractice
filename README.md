@@ -59,9 +59,25 @@ Everything is hosted from the **host computer**; your friends connect to the hos
 
 The sample questions/answers and keyword lists live in `server.js` inside the `QUESTION_BANK` array.
 
-- Replace the sample `question`, `answer` and `keywords` entries with **exact NCERT text** and your own keyword lists.
+- Replace the sample `question`, `answer` and `keywords` entries with your own content (or NCERT text **only if you have the rights/license to reuse and distribute it**) and your own keyword lists.
 - You can add more entries and increase the maximum rounds accordingly.
 
 The UI is intentionally **minimalist, dark, rounded and low-distraction**, with brighter accent colours only for timers and keyword highlights.
+
+### Optional: AI (Gemini) question generation
+
+If the built-in question bank runs out for a selected filter, the server can optionally ask **Gemini** to generate **original** practice questions (not copied from websites).
+
+1. Create a `.env` file in the project root (see [`.env.example`](.env.example:1)) and set:
+
+   - `GEMINI_API_KEY`
+   - (optional) `GEMINI_MODEL` (default: `gemini-1.5-flash`)
+
+2. Start the server and, on the host screen, enable **“Use Gemini to generate extra questions when needed”**.
+
+Notes:
+
+- This feature is intended to generate **fresh practice** questions aligned to the chapter.
+- Do **not** scrape/copy copyrighted question banks unless you have explicit permission.
 
 

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NCERT Timer Study</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <!-- JOIN VIEW -->
+    <div id="join-view" class="setup-container">
+      <div class="setup-title">Join Room</div>
+      
+      <div class="setup-form">
+        <div class="input-row">
+          <label>Your Name</label>
+          <input id="name-input" type="text" placeholder="Enter name" />
+        </div>
+        
+        <button id="join-btn">Join</button>
+      </div>
+      
+      <div id="player-error" class="error hidden"></div>
+    </div>
+
+    <!-- WAITING VIEW -->
+    <div id="waiting-view" class="lobby-container hidden">
+      <div class="lobby-title">Joined</div>
+      <div class="room-code" id="room-code">-----</div>
+      <div class="player-count">Waiting for host to start...</div>
+    </div>
+
+    <!-- GAME VIEW -->
+    <div id="game-view" class="game-container hidden">
+      <div class="timer" id="timer-value">00.0</div>
+      <div class="question" id="question-text"></div>
+
+      <div id="diagram-wrap" class="diagram hidden">
+        <img id="diagram-img" alt="diagram" />
+      </div>
+      
+      <!-- MCQ Options -->
+      <div class="mcq-options hidden" id="mcq-options">
+        <div class="mcq-option" data-option="1"><span class="mcq-key">1</span><span class="mcq-text"></span></div>
+        <div class="mcq-option" data-option="2"><span class="mcq-key">2</span><span class="mcq-text"></span></div>
+        <div class="mcq-option" data-option="3"><span class="mcq-key">3</span><span class="mcq-text"></span></div>
+        <div class="mcq-option" data-option="4"><span class="mcq-key">4</span><span class="mcq-text"></span></div>
+      </div>
+      
+      <div class="answer hidden" id="answer-text"></div>
+      
+      <div class="space-hint" id="space-hint">
+        <kbd id="hint-key">Space</kbd>
+        <span id="hint-text">when done</span>
+      </div>
+    </div>
+
+    <!-- SOURCE BADGE -->
+    <a id="source-badge" class="source-badge hidden" href="#" target="_blank" rel="noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+      <span id="source-label">NCERT</span>
+    </a>
+
+    <!-- FINISHED VIEW -->
+    <div id="finished-view" class="finished-container hidden">
+      <div class="finished-title">Session Complete</div>
+      <div class="finished-subtitle">Ask host for a new link</div>
+    </div>
+
+    <script>
+      const socket = io();
+
+      // Views
+      const joinView = document.getElementById('join-view');
+      const waitingView = document.getElementById('waiting-view');
+      const gameView = document.getElementById('game-view');
+      const finishedView = document.getElementById('finished-view');
+      const sourceBadge = document.getElementById('source-badge');
+
+      // Join elements
+      const nameInput = document.getElementById('name-input');
+      const joinBtn = document.getElementById('join-btn');
+      const playerError = document.getElementById('player-error');
+
+      // Waiting elements
+      const roomCodeEl = document.getElementById('room-code');
+
+      // Game elements
+      const timerValue = document.getElementById('timer-value');
+      const questionText = document.getElementById('question-text');
+      const diagramWrap = document.getElementById('diagram-wrap');
+      const diagramImg = document.getElementById('diagram-img');
+      const mcqOptions = document.getElementById('mcq-options');
+      const answerText = document.getElementById('answer-text');
+      const spaceHint = document.getElementById('space-hint');
+      const hintKey = document.getElementById('hint-key');
+      const hintText = document.getElementById('hint-text');
+      const sourceLabel = document.getElementById('source-label');
+
+      let roomId = null;
+      let state = 'before_join';
+      let currentQuestionType = 'long';
+      let doneThisQuestion = false;
+      let selectedOption = null;
+      let timerInterval = null;
+
+      function showView(view) {
+        [joinView, waitingView, gameView, finishedView].forEach(v => v.classList.add('hidden'));
+        view.classList.remove('hidden');
+      }
+
+      function formatTime(ms) {
+        if (!ms || ms < 0) return '00.0';
+        const s = ms / 1000;
+        return s.toFixed(1).padStart(4, '0');
+      }
+
+      function startTimer(startTime) {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          timerValue.textContent = formatTime(Date.now() - startTime);
+        }, 50);
+      }
+
+      function stopTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      // Sequential keyword highlighting
+      function highlightKeywords(answer, keywords) {
+        if (!keywords || !keywords.length) return answer;
+        let html = answer;
+        let delay = 0;
+        keywords.forEach((kw) => {
+          if (!kw) return;
+          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const re = new RegExp('(' + escaped + ')', 'gi');
+          html = html.replace(re, `<span class="keyword" style="animation-delay: ${delay}ms">$1</span>`);
+          delay += 120;
+        });
+        return html;
+      }
+
+      function setSource(source) {
+        if (!source || !source.name) {
+          sourceBadge.classList.add('hidden');
+          return;
+        }
+        sourceBadge.classList.remove('hidden');
+        sourceBadge.href = source.url || '#';
+        sourceLabel.textContent = source.name;
+      }
+
+      function setDiagram(diagramUrl) {
+        if (!diagramUrl) {
+          diagramWrap.classList.add('hidden');
+          diagramImg.removeAttribute('src');
+          return;
+        }
+        diagramImg.src = diagramUrl;
+        diagramWrap.classList.remove('hidden');
+      }
+
+      function showMCQOptions(options) {
+        if (!options || !options.length) {
+          mcqOptions.classList.add('hidden');
+          return;
+        }
+        mcqOptions.classList.remove('hidden');
+        const optionEls = mcqOptions.querySelectorAll('.mcq-option');
+        options.forEach((opt, i) => {
+          if (optionEls[i]) {
+            optionEls[i].querySelector('.mcq-text').textContent = opt;
+            optionEls[i].classList.remove('correct', 'incorrect', 'selected');
+          }
+        });
+      }
+
+      function selectMCQOption(optionNum) {
+        if (doneThisQuestion || state !== 'in_question') return;
+        
+        const optionEls = mcqOptions.querySelectorAll('.mcq-option');
+        optionEls.forEach((el, i) => {
+          el.classList.remove('selected');
+          if (i + 1 === optionNum) {
+            el.classList.add('selected');
+          }
+        });
+        
+        selectedOption = optionNum;
+        doneThisQuestion = true;
+        socket.emit('playerDone', { roomId, answer: optionNum });
+        hintText.textContent = 'waiting for others';
+      }
+
+      function showCorrectOption(correctIdx, myAnswer) {
+        const optionEls = mcqOptions.querySelectorAll('.mcq-option');
+        optionEls.forEach((el, i) => {
+          if (i + 1 === correctIdx) {
+            el.classList.add('correct');
+          } else if (i + 1 === myAnswer && myAnswer !== correctIdx) {
+            el.classList.add('incorrect');
+          }
+        });
+      }
+
+      // Get room ID from URL
+      function getRoomIdFromUrl() {
+        const parts = window.location.pathname.split('/');
+        return parts[parts.length - 1] || null;
+      }
+
+      roomId = getRoomIdFromUrl();
+      if (roomId) roomCodeEl.textContent = roomId;
+
+      // Events
+      joinBtn.addEventListener('click', () => {
+        playerError.classList.add('hidden');
+        if (!roomId) {
+          playerError.textContent = 'No room ID';
+          playerError.classList.remove('hidden');
+          return;
+        }
+        socket.emit('joinRoom', { roomId, name: nameInput.value });
+      });
+
+      // MCQ click handlers
+      mcqOptions.querySelectorAll('.mcq-option').forEach(el => {
+        el.addEventListener('click', () => {
+          const optNum = parseInt(el.dataset.option);
+          if (currentQuestionType === 'mcq') selectMCQOption(optNum);
+        });
+      });
+
+      // Socket events
+      socket.on('joinedRoom', payload => {
+        state = 'waiting';
+        showView(waitingView);
+      });
+
+      socket.on('questionStarted', payload => {
+        state = 'in_question';
+        currentQuestionType = payload.type || 'long';
+        doneThisQuestion = false;
+        selectedOption = null;
+        showView(gameView);
+        sourceBadge.classList.remove('hidden');
+        answerText.classList.add('hidden');
+        questionText.textContent = payload.question;
+        setSource(payload.source);
+        setDiagram(payload.diagramUrl);
+        
+        if (payload.type === 'mcq' && payload.options) {
+          showMCQOptions(payload.options);
+          hintKey.textContent = '1-4';
+          hintText.textContent = 'to select';
+        } else {
+          mcqOptions.classList.add('hidden');
+          hintKey.textContent = 'Space';
+          hintText.textContent = 'when done';
+        }
+        
+        startTimer(payload.startTime);
+      });
+
+      socket.on('showAnswer', payload => {
+        state = 'viewing_answer';
+        stopTimer();
+        timerValue.textContent = '——';
+        questionText.textContent = payload.question;
+        answerText.classList.remove('hidden');
+        answerText.innerHTML = highlightKeywords(payload.answer, payload.keywords);
+        setSource(payload.source);
+        setDiagram(payload.diagramUrl);
+        hintKey.textContent = '⏳';
+        hintText.textContent = 'waiting for host';
+        
+        if (payload.type === 'mcq' && payload.correctOption) {
+          showCorrectOption(payload.correctOption, selectedOption);
+        }
+      });
+
+      socket.on('gameOver', () => {
+        state = 'finished';
+        stopTimer();
+        sourceBadge.classList.add('hidden');
+        showView(finishedView);
+      });
+
+      socket.on('errorMessage', msg => {
+        playerError.textContent = msg;
+        playerError.classList.remove('hidden');
+      });
+
+      // Keyboard handlers
+      window.addEventListener('keydown', e => {
+        // MCQ: 1-4 keys
+        if (currentQuestionType === 'mcq' && state === 'in_question' && !doneThisQuestion) {
+          if (e.key >= '1' && e.key <= '4') {
+            e.preventDefault();
+            selectMCQOption(parseInt(e.key));
+          }
+        }
+        
+        // Long answer: Space key
+        if (currentQuestionType !== 'mcq' && (e.code === 'Space' || e.key === ' ')) {
+          if (state === 'in_question' && !doneThisQuestion && roomId) {
+            e.preventDefault();
+            doneThisQuestion = true;
+            socket.emit('playerDone', { roomId });
+            hintText.textContent = 'waiting for others';
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

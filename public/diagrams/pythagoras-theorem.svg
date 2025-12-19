@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320" viewBox="0 0 640 320">
+  <defs>
+    <style>
+      .s { stroke: #e8e4df; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .d { stroke: #9a958d; stroke-width: 1.5; fill: none; stroke-dasharray: 5 6; }
+      .t { fill: #e8e4df; font-family: Arial, sans-serif; font-size: 14px; }
+      .tm { fill: #9a958d; font-family: Arial, sans-serif; font-size: 12px; }
+    </style>
+  </defs>
+
+  <!-- Right triangle ABC (right angle at B) -->
+  <polyline class="s" points="170,250 170,90 470,250 170,250" />
+  <path class="s" d="M170 250 l18 0 l0 -18" />
+
+  <!-- Hypotenuse AC -->
+  <line class="s" x1="170" y1="90" x2="470" y2="250" />
+
+  <!-- Labels -->
+  <text class="t" x="156" y="272">B</text>
+  <text class="t" x="156" y="84">A</text>
+  <text class="t" x="482" y="256">C</text>
+
+  <text class="tm" x="144" y="170">AB</text>
+  <text class="tm" x="300" y="272">BC</text>
+  <text class="tm" x="320" y="140">AC</text>
+
+  <!-- Subtle squares hint (not to scale) -->
+  <rect class="d" x="100" y="90" width="70" height="70" />
+  <rect class="d" x="170" y="250" width="70" height="70" transform="translate(0 -70)" />
+  <text class="tm" x="86" y="78">a²</text>
+  <text class="tm" x="252" y="272">b²</text>
+  <text class="tm" x="500" y="148">c²</text>
+
+  <text class="tm" x="70" y="32">Right triangle (Pythagoras)</text>
+</svg>
+

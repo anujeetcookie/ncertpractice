@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320" viewBox="0 0 640 320">
+  <defs>
+    <style>
+      .s { stroke: #e8e4df; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .d { stroke: #9a958d; stroke-width: 1.5; fill: none; stroke-dasharray: 5 6; }
+      .t { fill: #e8e4df; font-family: Arial, sans-serif; font-size: 14px; }
+      .tm { fill: #9a958d; font-family: Arial, sans-serif; font-size: 12px; }
+    </style>
+  </defs>
+
+  <!-- Ground -->
+  <line class="s" x1="80" y1="260" x2="560" y2="260" />
+
+  <!-- Building -->
+  <rect class="d" x="460" y="110" width="60" height="150" />
+  <line class="s" x1="460" y1="260" x2="460" y2="110" />
+
+  <!-- Observer point P -->
+  <circle cx="160" cy="260" r="4" fill="#e8e4df" />
+  <text class="t" x="146" y="285">P</text>
+
+  <!-- Top of building T -->
+  <circle cx="460" cy="110" r="4" fill="#e8e4df" />
+  <text class="t" x="468" y="115">T</text>
+
+  <!-- Line of sight -->
+  <line class="s" x1="160" y1="260" x2="460" y2="110" />
+
+  <!-- Angle arc (approx) -->
+  <path class="s" d="M190 260 A40 40 0 0 1 180 235" />
+  <text class="tm" x="200" y="242">60°</text>
+
+  <text class="tm" x="70" y="32">Angle of elevation</text>
+</svg>
+

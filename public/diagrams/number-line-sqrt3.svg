@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="260" viewBox="0 0 640 260">
+  <defs>
+    <style>
+      .s { stroke: #e8e4df; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .m { stroke: #9a958d; stroke-width: 1.5; fill: none; stroke-dasharray: 5 6; }
+      .t { fill: #e8e4df; font-family: Arial, sans-serif; font-size: 14px; }
+      .tm { fill: #9a958d; font-family: Arial, sans-serif; font-size: 12px; }
+    </style>
+  </defs>
+
+  <!-- Number line -->
+  <line class="s" x1="80" y1="190" x2="560" y2="190" />
+  <polyline class="s" points="560,190 548,184 548,196" />
+
+  <!-- Ticks -->
+  <line class="s" x1="80" y1="182" x2="80" y2="198" />
+  <line class="s" x1="320" y1="182" x2="320" y2="198" />
+  <line class="s" x1="560" y1="182" x2="560" y2="198" />
+
+  <text class="t" x="74" y="220">0</text>
+  <text class="t" x="314" y="220">1</text>
+  <text class="t" x="554" y="220">2</text>
+
+  <!-- sqrt(3) mark (approx 1.732) -->
+  <line class="s" x1="496" y1="180" x2="496" y2="200" />
+  <circle cx="496" cy="190" r="4" fill="#e8e4df" />
+  <text class="t" x="484" y="162">√3</text>
+
+  <!-- subtle guide -->
+  <line class="m" x1="320" y1="70" x2="320" y2="190" />
+  <text class="tm" x="292" y="60">1 unit</text>
+
+  <text class="tm" x="80" y="34">Number line (marking √3)</text>
+</svg>
+

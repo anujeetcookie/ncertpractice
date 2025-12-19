@@ -1,0 +1,29 @@
+[
+  {
+    "id": "sample-mcq-1",
+    "grade": 10,
+    "subject": "Mathematics",
+    "chapter": "Quadratic Equations",
+    "type": "mcq",
+    "source": "practice",
+    "tags": ["pyq-style"],
+    "question": "If the roots of x^2 - 6x + k = 0 are equal, then k is:",
+    "options": ["8", "9", "10", "12"],
+    "correctOption": 2,
+    "answer": "Equal roots ⇒ discriminant D = b^2 - 4ac = 0. Here b = -6, a = 1, c = k. So 36 - 4k = 0 ⇒ k = 9.",
+    "keywords": ["discriminant", "D = 0", "equal roots", "k = 9"]
+  },
+  {
+    "id": "sample-short-1",
+    "grade": 9,
+    "subject": "Science",
+    "chapter": "Motion",
+    "type": "numerical",
+    "source": "practice",
+    "tags": ["important"],
+    "question": "A cyclist covers 900 m in 3 minutes. Find the speed in m/s.",
+    "answer": "Speed = distance/time = 900 m / (3×60 s) = 900/180 = 5 m/s.",
+    "keywords": ["speed", "distance/time", "5 m/s"]
+  }
+]
+

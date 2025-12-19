@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300">
+  <defs>
+    <style>
+      .s { stroke: #e8e4df; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .d { stroke: #9a958d; stroke-width: 1.5; fill: none; stroke-dasharray: 5 6; }
+      .t { fill: #e8e4df; font-family: Arial, sans-serif; font-size: 14px; }
+      .tm { fill: #9a958d; font-family: Arial, sans-serif; font-size: 12px; }
+    </style>
+  </defs>
+
+  <!-- Triangle ABC (AB = AC) -->
+  <polyline class="s" points="160,240 320,70 480,240 160,240" />
+
+  <!-- Altitude AD -->
+  <line class="d" x1="320" y1="70" x2="320" y2="240" />
+  <path class="s" d="M320 240 l16 0 l0 -16" />
+
+  <!-- Labels -->
+  <text class="t" x="310" y="52">A</text>
+  <text class="t" x="146" y="258">B</text>
+  <text class="t" x="490" y="258">C</text>
+  <text class="t" x="330" y="258">D</text>
+
+  <!-- Equal side marks -->
+  <line class="s" x1="240" y1="152" x2="252" y2="164" />
+  <line class="s" x1="388" y1="152" x2="376" y2="164" />
+
+  <text class="tm" x="234" y="126">AB</text>
+  <text class="tm" x="382" y="126">AC</text>
+</svg>
+
