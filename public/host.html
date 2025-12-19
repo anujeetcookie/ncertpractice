@@ -11,6 +11,12 @@
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
+    <!-- APP LOGO -->
+    <div class="app-logo">We're studyin'</div>
+    
+    <!-- LEGAL FOOTER -->
+    <div class="legal-footer">Not affiliated with NCERT. Content for educational practice only.</div>
+
     <!-- SETUP VIEW -->
     <div id="setup-view" class="setup-container">
       <div class="setup-title">NCERT Timer Study</div>
@@ -38,7 +44,13 @@
         
         <div class="input-row">
           <label>Questions</label>
-          <input id="rounds" type="number" min="1" max="30" value="5" />
+          <div class="rounds-group">
+            <input id="rounds" type="number" min="1" max="30" value="5" />
+            <div class="checkbox-row small">
+              <input id="unlimited-rounds" type="checkbox" />
+              <span>Unlimited</span>
+            </div>
+          </div>
         </div>
 
         <div class="input-row">
@@ -79,6 +91,7 @@
 
       <div id="diagram-wrap" class="diagram hidden">
         <img id="diagram-img" alt="diagram" />
+        <a id="diagram-search-link" href="#" target="_blank" class="diagram-search hidden">🔎 View Diagram Reference</a>
       </div>
       
       <!-- MCQ Options -->
@@ -128,6 +141,7 @@
       const subjectSelect = document.getElementById('subject-select');
       const chapterSelect = document.getElementById('chapter-select');
       const roundsInput = document.getElementById('rounds');
+      const unlimitedRoundsInput = document.getElementById('unlimited-rounds');
       const useAiInput = document.getElementById('use-ai');
       const createBtn = document.getElementById('create-room-btn');
       const hostError = document.getElementById('host-error');
@@ -144,6 +158,7 @@
       const questionText = document.getElementById('question-text');
       const diagramWrap = document.getElementById('diagram-wrap');
       const diagramImg = document.getElementById('diagram-img');
+      const diagramSearchLink = document.getElementById('diagram-search-link');
       const mcqOptions = document.getElementById('mcq-options');
       const answerText = document.getElementById('answer-text');
       const spaceHint = document.getElementById('space-hint');
@@ -157,6 +172,27 @@
       let timerInterval = null;
       let catalog = null;
       let lastPlayerCount = 0;
+
+      // Audio Context for soft highlight sound
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      function playHighlightSound() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        // Soft "blip" - sine wave with quick decay
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.15);
+        
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime); // Low volume
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      }
 
       function showView(view) {
         [setupView, lobbyView, gameView, finishedView].forEach(v => v.classList.add('hidden'));
@@ -244,14 +280,29 @@
         sourceLabel.textContent = source.name;
       }
 
-      function setDiagram(diagramUrl) {
-        if (!diagramUrl) {
+      function setDiagram(diagramUrl, searchQuery) {
+        if (!diagramUrl && !searchQuery) {
           diagramWrap.classList.add('hidden');
           diagramImg.removeAttribute('src');
+          diagramSearchLink.classList.add('hidden');
           return;
         }
-        diagramImg.src = diagramUrl;
         diagramWrap.classList.remove('hidden');
+        
+        if (diagramUrl) {
+          diagramImg.src = diagramUrl;
+          diagramImg.classList.remove('hidden');
+        } else {
+          diagramImg.removeAttribute('src');
+          diagramImg.classList.add('hidden');
+        }
+
+        if (searchQuery) {
+          diagramSearchLink.href = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchQuery)}`;
+          diagramSearchLink.classList.remove('hidden');
+        } else {
+          diagramSearchLink.classList.add('hidden');
+        }
       }
 
       function showMCQOptions(options) {
@@ -322,12 +373,21 @@
         }
         socket.emit('createRoom', {
           hostName: hostNameInput.value,
-          totalRounds: roundsInput.value,
+          totalRounds: unlimitedRoundsInput.checked ? -1 : roundsInput.value,
           grade: gradeSelect.value,
           subject: subjectSelect.value,
           chapter: chapterSelect.value,
           useAi: Boolean(useAiInput?.checked)
         });
+      });
+
+      unlimitedRoundsInput.addEventListener('change', () => {
+        roundsInput.disabled = unlimitedRoundsInput.checked;
+        if (unlimitedRoundsInput.checked) {
+          roundsInput.value = '';
+        } else {
+          roundsInput.value = 5;
+        }
       });
 
       startBtn.addEventListener('click', () => {
@@ -365,9 +425,9 @@
         showView(gameView);
         sourceBadge.classList.remove('hidden');
         answerText.classList.add('hidden');
-        questionText.textContent = payload.question;
+        questionText.innerHTML = payload.question;
         setSource(payload.source);
-        setDiagram(payload.diagramUrl);
+        setDiagram(payload.diagramUrl, payload.imageSearchQuery);
         
         if (payload.type === 'mcq' && payload.options) {
           showMCQOptions(payload.options);
@@ -389,8 +449,14 @@
         questionText.textContent = payload.question;
         answerText.classList.remove('hidden');
         answerText.innerHTML = highlightKeywords(payload.answer, payload.keywords);
+        
+        // Play sound if there are keywords (on the first one)
+        if (payload.keywords && payload.keywords.length > 0) {
+          playHighlightSound();
+        }
+
         setSource(payload.source);
-        setDiagram(payload.diagramUrl);
+        setDiagram(payload.diagramUrl, payload.imageSearchQuery);
         hintKey.textContent = 'Space';
         hintText.textContent = 'for next';
         

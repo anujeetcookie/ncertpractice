@@ -1466,6 +1466,28 @@ const CURRICULUM = {
       'Why Do We Fall Ill',
       'Natural Resources',
       'Improvement in Food Resources'
+    ],
+    'Social Science': [
+      'The French Revolution',
+      'Socialism in Europe and the Russian Revolution',
+      'Nazism and the Rise of Hitler',
+      'Forest Society and Colonialism',
+      'Pastoralists in the Modern World',
+      'India - Size and Location',
+      'Physical Features of India',
+      'Drainage',
+      'Climate',
+      'Natural Vegetation and Wildlife',
+      'Population',
+      'What is Democracy? Why Democracy?',
+      'Constitutional Design',
+      'Electoral Politics',
+      'Working of Institutions',
+      'Democratic Rights',
+      'The Story of Village Palampur',
+      'People as Resource',
+      'Poverty as a Challenge',
+      'Food Security in India'
     ]
   },
   10: {
@@ -1503,6 +1525,31 @@ const CURRICULUM = {
       'Sources of Energy',
       'Our Environment',
       'Sustainable Management of Natural Resources'
+    ],
+    'Social Science': [
+      'The Rise of Nationalism in Europe',
+      'Nationalism in India',
+      'The Making of a Global World',
+      'The Age of Industrialisation',
+      'Print Culture and the Modern World',
+      'Resources and Development',
+      'Forest and Wildlife Resources',
+      'Water Resources',
+      'Agriculture',
+      'Minerals and Energy Resources',
+      'Manufacturing Industries',
+      'Lifelines of National Economy',
+      'Power Sharing',
+      'Federalism',
+      'Gender, Religion and Caste',
+      'Political Parties',
+      'Outcomes of Democracy',
+      'Challenges to Democracy',
+      'Development',
+      'Sectors of the Indian Economy',
+      'Money and Credit',
+      'Globalisation and the Indian Economy',
+      'Consumer Rights'
     ]
   },
   11: {
@@ -1900,6 +1947,91 @@ function generateScienceQuestion({ grade, chapter }) {
   };
 }
 
+function generateSocialScienceQuestion({ grade, chapter }) {
+  // Social Science templates: dates, events, definitions.
+  const ch = String(chapter).toLowerCase();
+
+  // History: Date/Event matching
+  if (ch.includes('nationalism') || ch.includes('revolution') || ch.includes('world')) {
+    return {
+      id: makeId(`live-g${grade}-ss-hist`),
+      grade,
+      subject: 'Social Science',
+      chapter,
+      type: QUESTION_TYPES.SHORT,
+      source: 'practice',
+      tags: ['live', 'history'],
+      question: `Describe the significance of a major event or figure from "${chapter}".`,
+      answer: `This is an open-ended practice prompt. Identify a key event/figure (e.g., year, location, impact) and explain its importance in 3-4 sentences.`,
+      keywords: ['significance', 'impact', 'date', 'event']
+    };
+  }
+
+  // Geography: Map/Resource questions
+  if (ch.includes('resource') || ch.includes('agriculture') || ch.includes('industry') || ch.includes('india')) {
+    return {
+      id: makeId(`live-g${grade}-ss-geo`),
+      grade,
+      subject: 'Social Science',
+      chapter,
+      type: QUESTION_TYPES.SHORT,
+      source: 'practice',
+      tags: ['live', 'geography'],
+      question: `Explain the geographical conditions required for a specific crop or industry discussed in "${chapter}".`,
+      answer: `This is an open-ended practice prompt. Mention climate (temperature, rainfall), soil type, and major producing regions.`,
+      keywords: ['climate', 'soil', 'region', 'temperature', 'rainfall']
+    };
+  }
+
+  // Civics/Pol Sci: Rights/Democracy
+  if (ch.includes('democracy') || ch.includes('power') || ch.includes('federalism') || ch.includes('party')) {
+    return {
+      id: makeId(`live-g${grade}-ss-civ`),
+      grade,
+      subject: 'Social Science',
+      chapter,
+      type: QUESTION_TYPES.MCQ,
+      source: 'practice',
+      tags: ['live', 'civics'],
+      question: `Which of the following is a key feature of the political system discussed in "${chapter}"?`,
+      options: ['Feature A', 'Feature B', 'Feature C', 'Feature D'],
+      correctOption: 1,
+      answer: `Identify the correct feature based on the chapter content (e.g., power sharing arrangement, federal provision, or democratic right).`,
+      keywords: ['feature', 'democracy', 'right', 'provision']
+    };
+  }
+
+  // Economics: Development/Sectors
+  if (ch.includes('development') || ch.includes('sector') || ch.includes('economy') || ch.includes('credit')) {
+    return {
+      id: makeId(`live-g${grade}-ss-eco`),
+      grade,
+      subject: 'Social Science',
+      chapter,
+      type: QUESTION_TYPES.SHORT,
+      source: 'practice',
+      tags: ['live', 'economics'],
+      question: `Define a key economic term from "${chapter}" and give an example.`,
+      answer: `This is an open-ended practice prompt. Define the term (e.g., GDP, formal sector, collateral) and provide a relevant example from daily life.`,
+      keywords: ['definition', 'example', 'economic term']
+    };
+  }
+
+  // Fallback Social Science
+  return {
+    id: makeId(`live-g${grade}-ss`),
+    grade,
+    subject: 'Social Science',
+    chapter,
+    type: QUESTION_TYPES.SHORT,
+    source: 'practice',
+    tags: ['live'],
+    question: `Write a short note on a central theme of "${chapter}".`,
+    answer: `This is an open-ended practice prompt. Summarize the main idea or theme of the chapter in 4-5 lines.`,
+    keywords: ['summary', 'theme', 'key points']
+  };
+}
+
 function generateQuestionsFallback({ grade, subject, chapter, count, excludeIds = new Set() }) {
   const out = [];
   let attempts = 0;
@@ -1913,6 +2045,7 @@ function generateQuestionsFallback({ grade, subject, chapter, count, excludeIds 
     let q = null;
     if (s === 'Mathematics') q = generateMathQuestion({ grade: g, chapter: c });
     else if (s === 'Science') q = generateScienceQuestion({ grade: g, chapter: c });
+    else if (s === 'Social Science') q = generateSocialScienceQuestion({ grade: g, chapter: c });
 
     if (!q) {
       q = {
@@ -1966,30 +2099,19 @@ async function generateQuestionsAI({ grade, subject, chapter, chapterChoices = [
 }
 
 async function selectQuestions({ grade, subject, chapter, rounds, questionType, useAi }) {
-  let filtered = [...QUESTION_BANK];
-
-  if (grade) filtered = filtered.filter(q => q.grade === Number(grade));
-  if (subject) filtered = filtered.filter(q => q.subject === subject);
-  if (chapter) filtered = filtered.filter(q => q.chapter === chapter);
-  if (questionType) filtered = filtered.filter(q => q.type === questionType);
-
-  shuffleArray(filtered);
-
   const requested = Math.max(1, parseInt(rounds, 10) || 5);
-  let selected = filtered.slice(0, requested);
+  let selected = [];
+  const excludeIds = new Set();
 
-  // Live generation: if not enough questions match filters, generate the rest.
-  if (selected.length < requested) {
-    const needed = requested - selected.length;
-    const excludeIds = new Set(selected.map(q => q.id));
+  const g = Number(grade) || 10;
+  const s = subject || 'Mathematics';
+  const c = chapter || '';
 
-    const g = Number(grade) || (selected[0]?.grade ?? 10);
-    const s = subject || (selected[0]?.subject ?? 'Mathematics');
-    const c = chapter || '';
-
+  // 1. If AI is enabled, try to fetch ALL questions from AI first (Main Source)
+  if (useAi) {
     // For "All chapters" selection, allow AI to pick from curriculum map when available.
     let chapterChoices = [];
-    if (!chapter) {
+    if (!c) {
       const fromCurriculum = CURRICULUM?.[g]?.[s];
       if (Array.isArray(fromCurriculum) && fromCurriculum.length) {
         chapterChoices = fromCurriculum;
@@ -2001,38 +2123,56 @@ async function selectQuestions({ grade, subject, chapter, rounds, questionType, 
       }
     }
 
-    let generated = [];
-    if (useAi) {
-      generated = await generateQuestionsAI({
-        grade: g,
-        subject: s,
-        chapter: c,
-        chapterChoices,
-        count: needed,
-        questionType,
-        excludeIds
-      });
-    }
-
-    // Fill any remaining slots with the built-in template generator.
-    if (generated.length < needed) {
-      const fallback = generateQuestionsFallback({
-        grade: g,
-        subject: s,
-        chapter: chapter || (selected[0]?.chapter ?? ''),
-        count: needed - generated.length,
-        excludeIds
-      });
-      generated = generated.concat(fallback);
-    }
-
+    const generated = await generateQuestionsAI({
+      grade: g,
+      subject: s,
+      chapter: c,
+      chapterChoices,
+      count: requested,
+      questionType,
+      excludeIds
+    });
+    
     selected = selected.concat(generated);
+    generated.forEach(q => excludeIds.add(q.id));
+  }
+
+  // 2. If we still need questions, try the Static Question Bank
+  if (selected.length < requested) {
+    let filtered = [...QUESTION_BANK];
+    if (grade) filtered = filtered.filter(q => q.grade === Number(grade));
+    if (subject) filtered = filtered.filter(q => q.subject === subject);
+    if (chapter) filtered = filtered.filter(q => q.chapter === chapter);
+    if (questionType) filtered = filtered.filter(q => q.type === questionType);
+    
+    // Filter out ones we already got from AI (unlikely collision, but safe)
+    filtered = filtered.filter(q => !excludeIds.has(q.id));
+
+    shuffleArray(filtered);
+    const needed = requested - selected.length;
+    const fromBank = filtered.slice(0, needed);
+    
+    selected = selected.concat(fromBank);
+    fromBank.forEach(q => excludeIds.add(q.id));
+  }
+
+  // 3. If still short, use Fallback Generator
+  if (selected.length < requested) {
+    const needed = requested - selected.length;
+    const fallback = generateQuestionsFallback({
+      grade: g,
+      subject: s,
+      chapter: c,
+      count: needed,
+      excludeIds
+    });
+    selected = selected.concat(fallback);
   }
 
   return {
     questions: selected,
     rounds: selected.length,
-    available: filtered.length
+    available: selected.length // Approximation since we generated on demand
   };
 }
 
@@ -2074,6 +2214,7 @@ function getPublicRoomState(room) {
       type: q.type,
       options: q.options,
       diagramUrl: getDiagramUrl(q.diagram),
+      imageSearchQuery: q.image_search_query || null,
       source: TRUSTED_SOURCES[q.source] || { name: q.source }
     } : null
   };
@@ -2088,11 +2229,22 @@ io.on('connection', socket => {
   socket.on('createRoom', async ({ hostName, totalRounds, grade, subject, chapter, useAi }) => {
     const roomId = createRoomId();
 
+    // If unlimited rounds (-1), set a flag and fetch a small initial batch (e.g. 5)
+    // The "rounds" variable here will track the *currently available* count for display, or we can use a special value.
+    // However, the client expects a number. Let's handle it.
+    let isUnlimited = false;
+    let requestedRounds = parseInt(totalRounds, 10) || 5;
+    
+    if (requestedRounds === -1) {
+      isUnlimited = true;
+      requestedRounds = 5; // Initial batch
+    }
+
     const { questions, rounds } = await selectQuestions({
       grade,
       subject,
       chapter,
-      rounds: totalRounds,
+      rounds: requestedRounds,
       useAi: Boolean(useAi)
     });
 
@@ -2107,7 +2259,10 @@ io.on('connection', socket => {
       players: {},
       questions,
       questionIndex: 0,
-      totalRounds: rounds,
+      totalRounds: isUnlimited ? 'Unlimited' : rounds,
+      isUnlimited,
+      // Store filter params for re-fetching
+      filterParams: { grade, subject, chapter, useAi: Boolean(useAi) },
       done: new Set(),
       finishTimes: {},
       answers: {},
@@ -2155,6 +2310,7 @@ io.on('connection', socket => {
       type: q.type,
       options: q.options,
       diagramUrl: getDiagramUrl(q.diagram),
+      imageSearchQuery: q.image_search_query || null,
       source: TRUSTED_SOURCES[q.source] || { name: q.source },
       startTime: room.startTime
     });
@@ -2196,6 +2352,7 @@ io.on('connection', socket => {
         answer: q.answer,
         keywords: q.keywords,
         diagramUrl: getDiagramUrl(q.diagram),
+        imageSearchQuery: q.image_search_query || null,
         source: TRUSTED_SOURCES[q.source] || { name: q.source },
         finishTimes: times,
         playerAnswers
@@ -2223,20 +2380,46 @@ io.on('connection', socket => {
       answer: q.answer,
       keywords: q.keywords,
       diagramUrl: getDiagramUrl(q.diagram),
+      imageSearchQuery: q.image_search_query || null,
       source: TRUSTED_SOURCES[q.source] || { name: q.source },
       finishTimes: {},
       playerAnswers: {}
     });
   });
 
-  socket.on('hostNext', ({ roomId }) => {
+  socket.on('hostNext', async ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || room.hostId !== socket.id || room.state !== 'showing_answer') return;
 
     room.questionIndex += 1;
-    if (room.questionIndex >= room.totalRounds) {
+
+    // Check if game should end (only if NOT unlimited)
+    if (!room.isUnlimited && room.questionIndex >= room.totalRounds) {
       room.state = 'finished';
       return io.to(roomId).emit('gameOver', { totalRounds: room.totalRounds });
+    }
+
+    // Unlimited Logic: If we are near the end of the question buffer, fetch more!
+    if (room.isUnlimited && (room.questions.length - room.questionIndex) <= 2) {
+      // Fetch 5 more questions
+      const { questions: newQuestions } = await selectQuestions({
+        ...room.filterParams,
+        rounds: 5
+      });
+      
+      // Filter duplicates just in case
+      const existingIds = new Set(room.questions.map(q => q.id));
+      for (const nq of newQuestions) {
+        if (!existingIds.has(nq.id)) {
+          room.questions.push(nq);
+        }
+      }
+      
+      // If we still ran out (e.g. static bank exhausted and AI failed), handle gracefully
+      if (room.questionIndex >= room.questions.length) {
+         room.state = 'finished';
+         return io.to(roomId).emit('gameOver', { totalRounds: room.questionIndex });
+      }
     }
 
     room.state = 'in_question';
@@ -2253,6 +2436,7 @@ io.on('connection', socket => {
       type: q.type,
       options: q.options,
       diagramUrl: getDiagramUrl(q.diagram),
+      imageSearchQuery: q.image_search_query || null,
       source: TRUSTED_SOURCES[q.source] || { name: q.source },
       startTime: room.startTime
     });

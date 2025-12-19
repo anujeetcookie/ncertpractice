@@ -84,12 +84,18 @@ function validateAndNormalizeQuestion(q, { grade, subject, chapter, chapterChoic
   out.subject = typeof q.subject === 'string' && q.subject.trim() ? q.subject.trim() : String(subject);
   out.chapter = typeof q.chapter === 'string' && q.chapter.trim() ? q.chapter.trim() : String(chapter || 'General');
   out.type = normalizeType(q.type);
-  out.source = 'ai';
+  out.source = typeof q.source === 'string' && q.source.trim() ? q.source.trim() : 'AI Generated';
   out.tags = Array.isArray(q.tags) ? normalizeStringArray(q.tags) : ['ai', 'generated'];
   out.question = typeof q.question === 'string' ? q.question.trim() : '';
   out.answer = typeof q.answer === 'string' ? q.answer.trim() : '';
   out.keywords = normalizeStringArray(q.keywords);
   out.diagram = q.diagram ? String(q.diagram) : null;
+  out.diagram_description = typeof q.diagram_description === 'string' ? q.diagram_description.trim() : null;
+
+  // Append diagram description to question if present, for visibility
+  if (out.diagram_description) {
+    out.question += `<br><br><small><i>(Visual context: ${out.diagram_description})</i></small>`;
+  }
 
   // Enforce fixed chapter when specified
   if (chapter) {
@@ -186,8 +192,8 @@ async function generateQuestions({ grade, subject, chapter, chapterChoices = [],
     : `- Mix types across: ${allowedTypes.join(', ')} (include at least 1 mcq if possible).`;
 
   const prompt = [
-    `You generate ORIGINAL exam-style practice questions for CBSE/NCERT students.`,
-    `DO NOT copy/paste from any website/book/question bank. Write fresh, original questions and answers.`,
+    `You are a research tool. Retrieve authentic questions from NCERT textbooks.`,
+    `Do not invent questions. Extract them from the text or exercises of NCERT books.`,
     `Return ONLY valid JSON (no markdown, no comments).`,
     ``,
     `Create ${n} questions for: Class ${g} | Subject: ${s}${c ? ` | Chapter: ${c}` : ''}.`,
@@ -200,12 +206,14 @@ async function generateQuestions({ grade, subject, chapter, chapterChoices = [],
     `  "subject": string,`,
     `  "chapter": string,`,
     `  "type": "long" | "short" | "mcq" | "numerical",`,
-    `  "source": "ai",`,
+    `  "source": string,`,
     `  "tags": string[],`,
     `  "question": string,`,
     `  "answer": string,`,
     `  "keywords": string[],`,
     `  "diagram": string|null,`,
+    `  "diagram_description": string|null,`,
+    `  "image_search_query": string|null,`,
     `  // If type is mcq, include:`,
     `  "options": string[4],`,
     `  "correctOption": 1|2|3|4`,
@@ -213,13 +221,15 @@ async function generateQuestions({ grade, subject, chapter, chapterChoices = [],
     ``,
     `Rules:`,
     typeLine,
-    `- Use clear plain text (no LaTeX).`,
+    `- Use clear plain text, but you MAY use HTML tags <b>, <i>, <u>, <br> for formatting emphasis.`,
+    `- For "source", provide the EXACT citation (e.g. "NCERT Class 10 Science, Ch 6, Pg 102, Fig 6.3").`,
     `- For "answer", include the final answer and a short explanation/steps.`,
     `- "keywords" should contain 4-10 key terms/phrases students should write.`,
     `- Keep each question solvable without external data.`,
     `- Ensure MCQ has exactly 4 options and exactly 1 correct option.`,
-    `- Set "source" to "ai" in every object.`,
-    `- Set "diagram" to null unless essential.`,
+    `- If a diagram is essential, set "diagram_description" to a detailed visual description.`,
+    `- Also set "image_search_query" to a specific search term for the diagram (e.g. "NCERT Class 10 digestive system diagram").`,
+    `- Set "diagram" to a valid URL if you know one (e.g. Wikimedia), otherwise null.`,
     ``
   ]
     .filter(Boolean)

@@ -27,6 +27,38 @@
   --incorrect-bg: rgba(248, 113, 113, 0.15);
 }
 
+/* ===== APP LOGO ===== */
+.app-logo {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+  /* Optional: Text shadow for better visibility if needed */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ===== LEGAL FOOTER ===== */
+.legal-footer {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.5;
+  text-align: center;
+  pointer-events: none;
+  width: 100%;
+  max-width: 600px;
+  z-index: 50;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -367,14 +399,24 @@ button:hover {
   border-top: 1px solid var(--border);
 }
 
-/* Keyword highlight - sharp solid underline with smooth animation */
+/* Keyword highlight - sharp solid underline with smooth wipe animation */
 .keyword {
   position: relative;
-  display: inline;
-  background: transparent;
+  display: inline-block; /* Changed from inline to inline-block/inline-flex to support clip-path better on some browsers, but inline usually works with box-decoration-break. Let's stick to inline but use a background gradient trick or just clip-path if supported. */
+  /* Actually, clip-path on inline elements can be tricky if they wrap. 
+     If the keyword wraps, clip-path might treat it as one box or multiple.
+     For safety, let's stick to a background-size animation which is safer for text.
+     "clean left to right reveal" -> maybe a background wipe? 
+     The user specifically said "reveal animation", which might mean the TEXT reveals.
+     Let's assume they mean the Highlight Background reveals.
+  */
+  background: linear-gradient(to right, var(--hl-bg) 50%, transparent 50%);
+  background-size: 200% 100%;
+  background-position: 100% 0;
   padding: 0 1px;
-  opacity: 0;
-  animation: highlightFadeIn 0.5s ease forwards;
+  border-radius: 2px;
+  /* We'll animate background-position to reveal the highlight */
+  animation: highlightWipe 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 .keyword::after {
@@ -387,22 +429,17 @@ button:hover {
   background: var(--hl);
   transform: scaleX(0);
   transform-origin: left;
-  animation: underlineGrow 0.4s ease forwards;
+  animation: underlineGrow 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   animation-delay: inherit;
 }
 
-@keyframes highlightFadeIn {
+@keyframes highlightWipe {
   0% {
-    opacity: 0;
-    background: transparent;
-  }
-  30% {
-    opacity: 1;
-    background: var(--hl-bg);
+    background-position: 100% 0;
+    color: inherit; /* or transparent if we want text reveal */
   }
   100% {
-    opacity: 1;
-    background: var(--hl-bg);
+    background-position: 0 0;
   }
 }
 
