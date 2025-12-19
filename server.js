@@ -2226,7 +2226,7 @@ io.on('connection', socket => {
     socket.emit('questionCatalog', getQuestionCatalog());
   });
 
-  socket.on('createRoom', async ({ hostName, totalRounds, grade, subject, chapter, useAi }) => {
+  socket.on('createRoom', async ({ hostName, totalRounds, grade, subject, chapter, useAi, playAsHost }) => {
     const roomId = createRoomId();
 
     // If unlimited rounds (-1), set a flag and fetch a small initial batch (e.g. 5)
@@ -2269,6 +2269,14 @@ io.on('connection', socket => {
       state: 'waiting',
       startTime: null
     };
+
+    // If host wants to play, add them to players list immediately
+    if (playAsHost) {
+      rooms[roomId].players[socket.id] = { 
+        id: socket.id, 
+        name: (hostName?.trim() || 'Host') + ' (Host)' 
+      };
+    }
 
     socket.join(roomId);
     const baseUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || null;

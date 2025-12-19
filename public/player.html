@@ -60,6 +60,8 @@
       
       <div class="answer hidden" id="answer-text"></div>
       
+      <div class="players-list hidden" id="players-list"></div>
+      
       <div class="space-hint" id="space-hint">
         <kbd id="hint-key">Space</kbd>
         <span id="hint-text">when done</span>
@@ -107,6 +109,7 @@
       const diagramSearchLink = document.getElementById('diagram-search-link');
       const mcqOptions = document.getElementById('mcq-options');
       const answerText = document.getElementById('answer-text');
+      const playersList = document.getElementById('players-list');
       const spaceHint = document.getElementById('space-hint');
       const hintKey = document.getElementById('hint-key');
       const hintText = document.getElementById('hint-text');
@@ -161,6 +164,86 @@
       function stopTimer() {
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = null;
+      }
+
+      function renderPlayers(players, times = {}, answers = {}) {
+        playersList.innerHTML = '';
+        if (!players || !players.length) return;
+
+        // Sort players: Correct > Incorrect, then Time (fastest first)
+        const sorted = [...players].sort((a, b) => {
+          const ansA = answers[a.name];
+          const ansB = answers[b.name];
+          const timeA = times[a.name] || Infinity;
+          const timeB = times[b.name] || Infinity;
+
+          const correctA = ansA?.correct === true;
+          const correctB = ansB?.correct === true;
+          
+          if (correctA && !correctB) return -1;
+          if (!correctA && correctB) return 1;
+          
+          if (timeA !== timeB) return timeA - timeB;
+          return 0;
+        });
+
+        // Create Header
+        const header = document.createElement('div');
+        header.className = 'player-item header';
+        header.innerHTML = `
+          <span class="player-rank">#</span>
+          <span class="player-name">Name</span>
+          <span class="player-time">Time</span>
+          <span class="player-result">Result</span>
+        `;
+        playersList.appendChild(header);
+
+        sorted.forEach((p, index) => {
+          const item = document.createElement('div');
+          item.className = 'player-item';
+          
+          // Rank
+          const rank = document.createElement('span');
+          rank.className = 'player-rank';
+          rank.textContent = index + 1;
+          item.appendChild(rank);
+
+          // Name
+          const name = document.createElement('span');
+          name.className = 'player-name';
+          name.textContent = p.name;
+          item.appendChild(name);
+          
+          // Time
+          const time = document.createElement('span');
+          time.className = 'player-time';
+          time.textContent = times[p.name] ? formatTime(times[p.name]) + 's' : '--';
+          item.appendChild(time);
+
+          // Result
+          const result = document.createElement('span');
+          result.className = 'player-result';
+          
+          if (answers[p.name]) {
+            const ans = answers[p.name];
+            if (ans.correct === true) {
+              result.textContent = 'Correct';
+              result.classList.add('correct-text');
+              item.classList.add('row-correct');
+            } else if (ans.correct === false) {
+              result.textContent = 'Wrong';
+              result.classList.add('incorrect-text');
+              item.classList.add('row-incorrect');
+            } else {
+              result.textContent = 'Done';
+            }
+          } else {
+             result.textContent = times[p.name] ? 'Done' : '...';
+          }
+          
+          item.appendChild(result);
+          playersList.appendChild(item);
+        });
       }
 
       // Sequential keyword highlighting
@@ -298,6 +381,7 @@
         showView(gameView);
         sourceBadge.classList.remove('hidden');
         answerText.classList.add('hidden');
+        playersList.classList.add('hidden');
         questionText.innerHTML = payload.question;
         setSource(payload.source);
         setDiagram(payload.diagramUrl, payload.imageSearchQuery);
@@ -321,6 +405,7 @@
         timerValue.textContent = '——';
         questionText.textContent = payload.question;
         answerText.classList.remove('hidden');
+        playersList.classList.remove('hidden');
         answerText.innerHTML = highlightKeywords(payload.answer, payload.keywords);
         
         // Play sound if there are keywords (on the first one)
@@ -336,6 +421,12 @@
         if (payload.type === 'mcq' && payload.correctOption) {
           showCorrectOption(payload.correctOption, selectedOption);
         }
+        
+        renderPlayers(
+          Object.keys(payload.finishTimes).map(name => ({ name })),
+          payload.finishTimes,
+          payload.playerAnswers
+        );
       });
 
       socket.on('gameOver', () => {

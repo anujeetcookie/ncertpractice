@@ -61,6 +61,15 @@
             <span class="label-text">Use Gemini to generate extra questions</span>
           </label>
         </div>
+
+        <div class="input-row">
+          <label>Host Participation</label>
+          <label class="checkbox-row">
+            <input id="play-as-host" type="checkbox" />
+            <span class="custom-checkbox"></span>
+            <span class="label-text">Play as a player</span>
+          </label>
+        </div>
         
         <button id="create-room-btn">Create Room</button>
       </div>
@@ -144,6 +153,7 @@
       const roundsInput = document.getElementById('rounds');
       const unlimitedRoundsInput = document.getElementById('unlimited-rounds');
       const useAiInput = document.getElementById('use-ai');
+      const playAsHostInput = document.getElementById('play-as-host');
       const createBtn = document.getElementById('create-room-btn');
       const hostError = document.getElementById('host-error');
 
@@ -170,6 +180,7 @@
       let currentRoomId = null;
       let currentState = 'idle';
       let currentQuestionType = 'long';
+      let isHostPlaying = false;
       let timerInterval = null;
       let catalog = null;
       let lastPlayerCount = 0;
@@ -225,33 +236,81 @@
           return;
         }
         playerCount.textContent = `${players.length} player${players.length > 1 ? 's' : ''} joined`;
-        players.forEach(p => {
+
+        // Sort players: Correct > Incorrect, then Time (fastest first)
+        const sorted = [...players].sort((a, b) => {
+          const ansA = answers[a.name];
+          const ansB = answers[b.name];
+          const timeA = times[a.name] || Infinity;
+          const timeB = times[b.name] || Infinity;
+
+          const correctA = ansA?.correct === true;
+          const correctB = ansB?.correct === true;
+          
+          if (currentState === 'showing_answer') {
+             if (correctA && !correctB) return -1;
+             if (!correctA && correctB) return 1;
+          }
+          
+          if (timeA !== timeB) return timeA - timeB;
+          return 0;
+        });
+
+        // Create Header
+        const header = document.createElement('div');
+        header.className = 'player-item header';
+        header.innerHTML = `
+          <span class="player-rank">#</span>
+          <span class="player-name">Name</span>
+          <span class="player-time">Time</span>
+          <span class="player-result">Result</span>
+        `;
+        playersList.appendChild(header);
+
+        sorted.forEach((p, index) => {
           const item = document.createElement('div');
           item.className = 'player-item';
+          
+          // Rank
+          const rank = document.createElement('span');
+          rank.className = 'player-rank';
+          rank.textContent = index + 1;
+          item.appendChild(rank);
+
+          // Name
           const name = document.createElement('span');
           name.className = 'player-name';
           name.textContent = p.name;
           item.appendChild(name);
           
-          const info = document.createElement('span');
-          info.className = 'player-time';
+          // Time
+          const time = document.createElement('span');
+          time.className = 'player-time';
+          time.textContent = times[p.name] ? formatTime(times[p.name]) + 's' : '--';
+          item.appendChild(time);
+
+          // Result
+          const result = document.createElement('span');
+          result.className = 'player-result';
           
           if (answers[p.name]) {
             const ans = answers[p.name];
             if (ans.correct === true) {
-              info.textContent = '✓ ' + (times[p.name] ? formatTime(times[p.name]) + 's' : '');
-              info.classList.add('correct');
+              result.textContent = 'Correct';
+              result.classList.add('correct-text');
+              item.classList.add('row-correct');
             } else if (ans.correct === false) {
-              info.textContent = '✗ ' + (times[p.name] ? formatTime(times[p.name]) + 's' : '');
-              info.classList.add('incorrect');
-            } else if (times[p.name]) {
-              info.textContent = formatTime(times[p.name]) + 's';
+              result.textContent = 'Wrong';
+              result.classList.add('incorrect-text');
+              item.classList.add('row-incorrect');
+            } else {
+              result.textContent = 'Done';
             }
-          } else if (times[p.name]) {
-            info.textContent = formatTime(times[p.name]) + 's';
+          } else {
+             result.textContent = times[p.name] ? 'Done' : '...';
           }
           
-          item.appendChild(info);
+          item.appendChild(result);
           playersList.appendChild(item);
         });
       }
@@ -372,13 +431,17 @@
           hostError.classList.remove('hidden');
           return;
         }
+        
+        isHostPlaying = Boolean(playAsHostInput?.checked);
+        
         socket.emit('createRoom', {
           hostName: hostNameInput.value,
           totalRounds: unlimitedRoundsInput.checked ? -1 : roundsInput.value,
           grade: gradeSelect.value,
           subject: subjectSelect.value,
           chapter: chapterSelect.value,
-          useAi: Boolean(useAiInput?.checked)
+          useAi: Boolean(useAiInput?.checked),
+          playAsHost: isHostPlaying
         });
       });
 
@@ -430,14 +493,30 @@
         setSource(payload.source);
         setDiagram(payload.diagramUrl, payload.imageSearchQuery);
         
-        if (payload.type === 'mcq' && payload.options) {
-          showMCQOptions(payload.options);
-          hintKey.textContent = '⏳';
-          hintText.textContent = 'waiting for players';
+        // Host playing UI
+        if (isHostPlaying) {
+          hintKey.textContent = 'Space';
+          hintText.textContent = 'when done';
+          
+          if (payload.type === 'mcq' && payload.options) {
+             showMCQOptions(payload.options);
+             // Add clickable class for host
+             mcqOptions.classList.add('interactive');
+          } else {
+             mcqOptions.classList.add('hidden');
+          }
         } else {
-          mcqOptions.classList.add('hidden');
-          hintKey.textContent = '⏳';
-          hintText.textContent = 'waiting for players';
+          // Standard Host UI (Monitoring)
+          if (payload.type === 'mcq' && payload.options) {
+            showMCQOptions(payload.options);
+            hintKey.textContent = '⏳';
+            hintText.textContent = 'waiting for players';
+            mcqOptions.classList.remove('interactive');
+          } else {
+            mcqOptions.classList.add('hidden');
+            hintKey.textContent = '⏳';
+            hintText.textContent = 'waiting for players';
+          }
         }
         
         startTimer(payload.startTime);
@@ -494,11 +573,38 @@
           return;
         }
 
-        // Solo mode: if no players joined, allow host to reveal answer.
-        if (currentState === 'in_question' && lastPlayerCount === 0) {
-          e.preventDefault();
-          socket.emit('hostRevealAnswer', { roomId: currentRoomId });
+        if (currentState === 'in_question') {
+           // If host is playing, Space means "Done"
+           if (isHostPlaying) {
+             e.preventDefault();
+             socket.emit('playerDone', { roomId: currentRoomId, answer: undefined });
+             return;
+           }
+           
+           // If host is NOT playing, check for solo mode
+           if (lastPlayerCount === 0) {
+             e.preventDefault();
+             socket.emit('hostRevealAnswer', { roomId: currentRoomId });
+           }
         }
+      });
+      
+      // MCQ Click Handler
+      mcqOptions.addEventListener('click', e => {
+        if (!isHostPlaying || currentState !== 'in_question') return;
+        
+        const opt = e.target.closest('.mcq-option');
+        if (!opt) return;
+        
+        const val = parseInt(opt.dataset.option, 10);
+        
+        // Visual feedback
+        const all = mcqOptions.querySelectorAll('.mcq-option');
+        all.forEach(el => el.classList.remove('selected'));
+        opt.classList.add('selected');
+        
+        // Submit
+        socket.emit('playerDone', { roomId: currentRoomId, answer: val });
       });
     </script>
   </body>
