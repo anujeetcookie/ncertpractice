@@ -12,14 +12,13 @@
   </head>
   <body>
     <!-- APP LOGO -->
-    <div class="app-logo">We're studyin'</div>
+    <img src="/logo.png" class="app-logo-img" alt="App Logo" />
     
     <!-- LEGAL FOOTER -->
     <div class="legal-footer">Not affiliated with NCERT. Content for educational practice only.</div>
 
     <!-- SETUP VIEW -->
     <div id="setup-view" class="setup-container">
-      <div class="setup-title">NCERT Timer Study</div>
       
       <div class="setup-form">
         <div class="input-row">
@@ -44,21 +43,23 @@
         
         <div class="input-row">
           <label>Questions</label>
-          <div class="rounds-group">
-            <input id="rounds" type="number" min="1" max="30" value="5" />
-            <div class="checkbox-row small">
+          <div class="merged-group">
+            <input id="rounds" type="number" min="1" max="30" value="5" placeholder="Number of questions" />
+            <label class="checkbox-row merged-bottom">
               <input id="unlimited-rounds" type="checkbox" />
-              <span>Unlimited</span>
-            </div>
+              <span class="custom-checkbox"></span>
+              <span class="label-text">Unlimited</span>
+            </label>
           </div>
         </div>
 
         <div class="input-row">
           <label>AI</label>
-          <div class="checkbox-row">
+          <label class="checkbox-row">
             <input id="use-ai" type="checkbox" />
-            <span>Use Gemini to generate extra questions when needed</span>
-          </div>
+            <span class="custom-checkbox"></span>
+            <span class="label-text">Use Gemini to generate extra questions</span>
+          </label>
         </div>
         
         <button id="create-room-btn">Create Room</button>

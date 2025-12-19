@@ -28,19 +28,16 @@
 }
 
 /* ===== APP LOGO ===== */
-.app-logo {
+.app-logo-img {
   position: fixed;
   top: 24px;
   left: 24px;
   z-index: 100;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  color: #ffffff;
-  letter-spacing: -0.02em;
+  height: 40px; /* Adjust based on actual image aspect ratio */
+  width: auto;
   pointer-events: none;
-  /* Optional: Text shadow for better visibility if needed */
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  /* Optional: Drop shadow for better visibility against dark bg */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
 /* ===== LEGAL FOOTER ===== */
@@ -125,34 +122,110 @@ input, select {
 
 /* Override the global input style for checkboxes */
 input[type="checkbox"] {
-  width: auto;
-  padding: 0;
-  border: none;
-  background: transparent;
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
 }
 
 .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 12px;
+  padding: 14px 16px;
   text-align: left;
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
 }
 
-.checkbox-row input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--hl);
+.checkbox-row:hover {
+  border-color: var(--muted);
+  background: #23201c;
 }
 
-.checkbox-row span {
-  font-size: 13px;
+/* Custom Checkbox Styling */
+.custom-checkbox {
+  position: relative;
+  height: 20px;
+  width: 20px;
+  background-color: transparent;
+  border: 2px solid var(--muted);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.checkbox-row input:checked ~ .custom-checkbox {
+  background-color: var(--hl);
+  border-color: var(--hl);
+}
+
+.custom-checkbox::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.5);
+}
+
+.checkbox-row input:checked ~ .custom-checkbox::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.label-text {
+  font-size: 14px;
   color: var(--text);
+}
+
+/* Merged Group Styling */
+.merged-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.merged-group input {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: rgba(255, 255, 255, 0.05); /* Subtle separator */
+  z-index: 2;
+}
+
+.merged-group input:focus {
+  z-index: 3; /* Bring to front on focus */
+}
+
+.merged-group .merged-bottom {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: -1px; /* Overlap borders */
+  border-top: 1px solid var(--border); /* Ensure separator exists */
+}
+
+/* General Appeal Improvements */
+.setup-form {
+  display: grid;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.input-row {
+  display: grid;
+  gap: 8px;
 }
 
 input:focus, select:focus {
